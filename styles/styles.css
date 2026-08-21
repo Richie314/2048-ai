@@ -142,9 +142,24 @@ html, body {
 }
 
 .landing-main {
-    min-height: calc(100vh - 76px);
+    min-height: calc(100vh - 126px);
     padding: 2rem 1.25rem;
     background: radial-gradient(circle at 50% 35%, var(--primary-100), var(--primary-50) 60%);
+}
+
+.landing-footer {
+    min-height: 50px;
+    padding: 0.5rem 1rem;
+    background-color: var(--primary-50);
+}
+
+.landing-footer a {
+    color: var(--primary-700);
+    font-size: 1.05rem;
+}
+
+[data-theme="dark"] .landing-footer {
+    background-color: var(--primary-900);
 }
 
 .landing-content {

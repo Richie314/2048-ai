@@ -459,7 +459,7 @@ class Game2048 {
             } catch (error) {
                 console.error('Error loading playback file:', error);
                 const status = document.getElementById('playback-status');
-                if (status) status.textContent = 'File .2048 non valido';
+                if (status) status.textContent = 'File .2048.json non valido';
             }
         });
         reader.readAsText(file);
@@ -486,7 +486,7 @@ class Game2048 {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `2048-game-${Date.now()}.2048`;
+        link.download = `2048-game-${Date.now()}.2048.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
