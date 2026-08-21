@@ -1,7 +1,9 @@
-const cacheName = '2048-ai-cache-v1';
+const cacheName = '2048-ai-cache-v2';
 const assetsToCache = [
   '.',
   'index.html',
+  'game.html',
+  'playback.html',
   'styles/styles.css',
   'scripts/game.js',
   'scripts/translations.js',

@@ -5,7 +5,8 @@
 // ============================================
 
 class Game2048 {
-    constructor() {
+    constructor(options = {}) {
+        this.mode = options.mode || 'game';
         this.boardSize = 4;
         this.board = [];
         this.score = 0;
@@ -19,7 +20,11 @@ class Game2048 {
         this.playbackIndex = 0;
         
         this.initializeElements();
-        this.loadGameState();
+        if (this.mode === 'game') {
+            this.loadGameState();
+        } else {
+            this.board = Array(this.boardSize * this.boardSize).fill(0);
+        }
         this.setupEventListeners();
         this.render();
     }
@@ -35,8 +40,10 @@ class Game2048 {
         this.continueBtn = document.getElementById('continue-btn');
         this.exportBtn = document.getElementById('export-btn');
         this.playbackBtn = document.getElementById('playback-btn');
-        this.gameOverModal = new bootstrap.Modal(document.getElementById('gameOverModal'));
-        this.victoryModal = new bootstrap.Modal(document.getElementById('victoryModal'));
+        const gameOverModalElement = document.getElementById('gameOverModal');
+        const victoryModalElement = document.getElementById('victoryModal');
+        this.gameOverModal = gameOverModalElement ? new bootstrap.Modal(gameOverModalElement) : null;
+        this.victoryModal = victoryModalElement ? new bootstrap.Modal(victoryModalElement) : null;
         
         this.finalScoreElement = document.getElementById('final-score');
         this.bestTileElement = document.getElementById('best-tile');
@@ -44,6 +51,7 @@ class Game2048 {
     }
 
     setupEventListeners() {
+        if (!this.boardElement) return;
         // Keyboard controls
         document.addEventListener('keydown', (e) => this.handleKeyPress(e));
         
@@ -66,12 +74,12 @@ class Game2048 {
         }, { passive: false });
 
         // Button controls
-        this.newGameBtn.addEventListener('click', () => this.newGame());
-        this.undoBtn.addEventListener('click', () => this.undo());
-        this.replayBtn.addEventListener('click', () => this.newGame());
-        this.exportBtn.addEventListener('click', () => this.exportGame());
-        this.playbackBtn.addEventListener('click', () => this.playbackRecordedGame());
-        this.continueBtn.addEventListener('click', () => {
+        this.newGameBtn?.addEventListener('click', () => this.newGame());
+        this.undoBtn?.addEventListener('click', () => this.undo());
+        this.replayBtn?.addEventListener('click', () => this.newGame());
+        this.exportBtn?.addEventListener('click', () => this.exportGame());
+        this.playbackBtn?.addEventListener('click', () => this.playbackRecordedGame());
+        this.continueBtn?.addEventListener('click', () => {
             this.won = false;
             this.render();
         });
@@ -82,7 +90,12 @@ class Game2048 {
         });
 
         // Theme toggle
-        document.getElementById('theme-toggle').addEventListener('click', () => this.toggleTheme());
+        document.getElementById('theme-toggle')?.addEventListener('click', () => this.toggleTheme());
+
+        document.getElementById('recording-file')?.addEventListener('change', (event) => {
+            this.loadPlaybackFile(event.target.files[0]);
+        });
+        document.getElementById('start-playback-btn')?.addEventListener('click', () => this.playbackRecordedGame());
     }
 
     // ============================================
@@ -421,6 +434,37 @@ class Game2048 {
         }, 700);
     }
 
+    loadPlaybackFile(file) {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.addEventListener('load', () => {
+            try {
+                const data = JSON.parse(reader.result);
+                if (!data.recording?.initialState || !Array.isArray(data.recording.moves)) {
+                    throw new Error('Invalid recording');
+                }
+                this.recordingSession = data.recording;
+                this.boardSize = data.game?.boardSize || 4;
+                this.board = [...this.recordingSession.initialState.board];
+                this.score = this.recordingSession.initialState.score;
+                this.gameOver = false;
+                this.won = false;
+                const startButton = document.getElementById('start-playback-btn');
+                if (startButton) startButton.disabled = false;
+                const status = document.getElementById('playback-status');
+                if (status) status.textContent = `${file.name} (${this.recordingSession.moves.length} mosse)`;
+                this.updateScore();
+                this.renderBoard();
+            } catch (error) {
+                console.error('Error loading playback file:', error);
+                const status = document.getElementById('playback-status');
+                if (status) status.textContent = 'File .2048 non valido';
+            }
+        });
+        reader.readAsText(file);
+    }
+
     exportGame() {
         const exportData = {
             version: 1,
@@ -490,8 +534,8 @@ class Game2048 {
 
     updateUndoUI() {
         const undoCount = Math.max(0, this.history.length - 1);
-        this.undoCount.textContent = undoCount;
-        this.undoBtn.disabled = undoCount === 0;
+        if (this.undoCount) this.undoCount.textContent = undoCount;
+        if (this.undoBtn) this.undoBtn.disabled = undoCount === 0;
     }
 
     // ============================================
@@ -511,11 +555,14 @@ class Game2048 {
     }
 
     updateScore() {
+        if (!this.scoreElement) return;
         // Trigger animation by removing and re-adding the animation class
         this.scoreElement.style.animation = 'none';
         setTimeout(() => {
-            this.scoreElement.textContent = this.score;
-            this.scoreElement.style.animation = 'scoreUpdate 0.3s ease-out';
+            if (this.scoreElement) {
+                this.scoreElement.textContent = this.score;
+                this.scoreElement.style.animation = 'scoreUpdate 0.3s ease-out';
+            }
         }, 10);
         
         const bestScore = parseInt(localStorage.getItem('2048_bestScore') || '0', 10);
@@ -523,7 +570,9 @@ class Game2048 {
             localStorage.setItem('2048_bestScore', this.score);
         }
         
-        this.bestScoreElement.textContent = Math.max(this.score, bestScore);
+        if (this.bestScoreElement) {
+            this.bestScoreElement.textContent = Math.max(this.score, bestScore);
+        }
     }
 
     renderBoard() {
@@ -569,6 +618,7 @@ class Game2048 {
     }
 
     showGameOver() {
+        if (!this.gameOverModal) return;
         const bestTile = Math.max(...this.board);
         this.finalScoreElement.textContent = this.score;
         this.bestTileElement.textContent = bestTile;
@@ -576,6 +626,7 @@ class Game2048 {
     }
 
     showVictory() {
+        if (!this.victoryModal) return;
         this.victoryScoreElement.textContent = this.score;
         this.victoryModal.show();
     }
@@ -601,7 +652,8 @@ class Game2048 {
             score: this.score,
             gameOver: this.gameOver,
             won: this.won,
-            history: this.history
+            history: this.history,
+            recording: this.recordingSession
         };
         
         localStorage.setItem('2048_gameState', JSON.stringify(gameData));
@@ -645,24 +697,14 @@ class Game2048 {
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('2048_theme', newTheme);
         
-        const themeBtn = document.getElementById('theme-toggle');
-        if (newTheme === 'dark') {
-            themeBtn.innerHTML = '<i class="bi bi-sun"></i>';
-        } else {
-            themeBtn.innerHTML = '<i class="bi bi-moon"></i>';
-        }
+        updateThemeButton(newTheme);
     }
 
     initializeTheme() {
         const savedTheme = localStorage.getItem('2048_theme') || 'light';
         document.documentElement.setAttribute('data-theme', savedTheme);
         
-        const themeBtn = document.getElementById('theme-toggle');
-        if (savedTheme === 'dark') {
-            themeBtn.innerHTML = '<i class="bi bi-sun"></i>';
-        } else {
-            themeBtn.innerHTML = '<i class="bi bi-moon"></i>';
-        }
+        updateThemeButton(savedTheme);
     }
 
 
@@ -673,7 +715,32 @@ class Game2048 {
 // ============================================
 
 function initializeGame() {
-    const game = new Game2048();
+    const page = document.documentElement.dataset.page;
+    if (page === 'landing') {
+        initializeTheme();
+        document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+        return;
+    }
+    const game = new Game2048({ mode: page === 'playback' ? 'playback' : 'game' });
     game.initializeTheme();
+}
+
+function updateThemeButton(theme) {
+    const themeBtn = document.getElementById('theme-toggle');
+    if (themeBtn) themeBtn.innerHTML = `<i class="bi bi-${theme === 'dark' ? 'sun' : 'moon'}"></i>`;
+}
+
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('2048_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeButton(savedTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('2048_theme', newTheme);
+    updateThemeButton(newTheme);
 }
 initializeGame();

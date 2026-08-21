@@ -122,10 +122,6 @@ html, body {
 
     .compact-action {
         flex: 0 0 auto;
-    }
-}
-
-    .compact-action {
         padding: 0.25rem 0.45rem;
         min-width: 2.5rem;
         height: 2.5rem;
@@ -143,6 +139,44 @@ html, body {
     height: calc(100vh - 76px);
     overflow: hidden;
     padding: 10px 12px 12px;
+}
+
+.landing-main {
+    min-height: calc(100vh - 76px);
+    padding: 2rem 1.25rem;
+    background: radial-gradient(circle at 50% 35%, var(--primary-100), var(--primary-50) 60%);
+}
+
+.landing-content {
+    max-width: 700px;
+}
+
+.landing-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 170px;
+    height: 170px;
+    margin-bottom: 1.5rem;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    color: white;
+    font-size: 3.5rem;
+    font-weight: 800;
+    box-shadow: 0 18px 40px rgba(2, 132, 199, 0.25);
+}
+
+.landing-content h1 {
+    font-size: clamp(2rem, 6vw, 4rem);
+    font-weight: 800;
+}
+
+.playback-main .game-wrapper {
+    max-width: 520px;
+}
+
+.playback-status {
+    min-height: 1.5rem;
 }
 
 .game-wrapper {
@@ -173,6 +207,7 @@ html, body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     position: relative;
     touch-action: none;
+    -webkit-user-select: none;
     user-select: none;
 }
 
@@ -184,6 +219,7 @@ html, body {
     font-weight: bold;
     font-size: clamp(1.5rem, 5vw, 3rem);
     cursor: default;
+    -webkit-user-select: none;
     user-select: none;
     background-color: var(--primary-100);
     color: var(--tile-text-light);

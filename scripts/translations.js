@@ -4,6 +4,15 @@
 
 const translations = {
     it: {
+        landingTitle: 'Raggiungi 2048.',
+        landingSubtitle: 'La partita classica, con salvataggio locale e replay delle tue mosse.',
+        startGame: 'Inizia a giocare',
+        openPlayback: 'Apri un playback',
+        newGame: 'Nuova Partita',
+        undo: 'Annulla',
+        chooseFile: 'Apri partita',
+        startPlayback: 'Avvia',
+        choosePlaybackFile: 'Scegli un file .2048 per visualizzare la partita',
         score: 'Punteggio',
         instructions: 'Istruzioni',
         instr1: 'Usa le frecce della tastiera o scorri il dito per muovere i tile',
@@ -22,6 +31,15 @@ const translations = {
         playback: 'Playback',
     },
     en: {
+        landingTitle: 'Reach 2048.',
+        landingSubtitle: 'The classic game, with local saves and replayable moves.',
+        startGame: 'Start playing',
+        openPlayback: 'Open playback',
+        newGame: 'New Game',
+        undo: 'Undo',
+        chooseFile: 'Open game',
+        startPlayback: 'Start',
+        choosePlaybackFile: 'Choose a .2048 file to view the game',
         score: 'Score',
         instructions: 'Instructions',
         instr1: 'Use arrow keys or swipe to move tiles',
@@ -56,8 +74,10 @@ function updateTranslations(lang) {
     });
 
     // Re-initialize modals with updated text
-    const gameOverModal = bootstrap.Modal.getInstance(document.getElementById('gameOverModal'));
-    const victoryModal = bootstrap.Modal.getInstance(document.getElementById('victoryModal'));
+    const gameOverElement = document.getElementById('gameOverModal');
+    const victoryElement = document.getElementById('victoryModal');
+    const gameOverModal = gameOverElement ? bootstrap.Modal.getInstance(gameOverElement) : null;
+    const victoryModal = victoryElement ? bootstrap.Modal.getInstance(victoryElement) : null;
     
     if (gameOverModal) {
         gameOverModal.hide();
