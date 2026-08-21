@@ -17,7 +17,7 @@ const translations = {
         instructions: 'Istruzioni',
         instr1: 'Usa le frecce della tastiera o scorri il dito per muovere i tile',
         instr2: 'Combina i tile con lo stesso numero per creare numeri più grandi',
-        instr3: "L'obiettivo è raggiungere il tile 2048",
+        instr3: "L'obiettivo è raggiungere 2048",
         instr4: 'Puoi annullare fino a 10 mosse precedenti',
         bestScore: 'Migliore',
         gameOver: 'Partita Terminata',
@@ -27,7 +27,7 @@ const translations = {
         playAgain: 'Gioca Ancora',
         victory: '🎉 Hai Vinto! 🎉',
         continue: 'Continua',
-        exportGame: 'Esporta .2048',
+        exportGame: 'Esporta',
         playback: 'Playback',
     },
     en: {
@@ -54,7 +54,7 @@ const translations = {
         playAgain: 'Play Again',
         victory: '🎉 You Won! 🎉',
         continue: 'Continue',
-        exportGame: 'Export .2048',
+        exportGame: 'Export',
         playback: 'Playback',
     }
 };

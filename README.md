@@ -25,15 +25,21 @@ All game state, preferences, and the best score are stored in browser `localStor
 
 ```text
 2048-ai/
-├── index.html                 # Landing page
+├── images/
+│   ├── icon.svg               # App icon
+│   ├── it-flag.svg            # SVG Repo flag asset
+│   └── uk-flag.svg            # SVG Repo flag asset
+├── scripts/
+│   ├── game.js                # Shared 2048 engine and page controllers
+│   ├── service-worker.js      # Offline cache
+│   └── translations.js        # Italian and English translations
+├── styles/
+│   └── styles.css             # Shared themes, layout, tiles, and animations
 ├── game.html                  # Playable game page
+├── index.html                 # Landing page
 ├── playback.html              # File-based playback page
-├── styles/styles.css          # Shared themes, layout, tiles, and animations
-├── scripts/game.js            # Shared 2048 engine and page controllers
-├── scripts/translations.js    # Italian and English translations
-├── scripts/service-worker.js  # Offline cache
 ├── manifest.json              # Installable web app metadata
-├── images/icon.svg            # App icon
+├── LICENSE                    # GNU GPLv3 license
 └── README.md
 ```
 
@@ -50,3 +56,13 @@ Open `index.html` directly in a modern browser, or serve the folder with any sta
 - Export format: JSON with a `.2048` extension containing the current game and its recorded frames
 - Animations respect `prefers-reduced-motion`
 - Keyboard, touch, and accessible semantic controls are supported
+
+## License and Third-Party Assets
+
+The project code is licensed under the GNU General Public License, version 3
+(GPLv3). See [LICENSE](LICENSE) for the complete license text.
+
+The language selector flags in `images/it-flag.svg` and `images/uk-flag.svg`
+were obtained from [SVG Repo](https://www.svgrepo.com/). These third-party
+assets are subject to the licenses and terms applicable to their respective
+SVG Repo source pages and are not relicensed by this project's GPLv3 notice.
