@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0ea5e9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>2048</title>
+
+    <link rel="apple-touch-icon" href="images/icon.svg">
+    <link rel="icon" href="images/icon.svg" type="image/svg+xml">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles/styles.css">
+
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script defer src="scripts/translations.js"></script>
+    <script defer src="scripts/game.js"></script>
+</head>
+<body>
+    <!-- Header with all controls -->
+    <header class="navbar-container">
+        <nav class="navbar navbar-light bg-body-tertiary">
+            <div class="container-fluid d-flex flex-column flex-sm-row flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                    <span class="navbar-brand mb-0 h5 d-none d-sm-inline-block"><strong>2048</strong></span>
+                    <div class="score-display d-flex flex-column align-items-center px-2 py-1 border rounded-3 bg-body-secondary">
+                        <div class="text-muted small" data-i18n="score">Punteggio</div>
+                        <div class="fs-6 fw-bold text-primary" id="score">0</div>
+                    </div>
+                    <div class="best-score-display mt-0 d-flex flex-column align-items-center px-2 py-1 border rounded-3 bg-body-secondary">
+                        <div class="text-muted small" data-i18n="bestScore">Migliore</div>
+                        <div class="fs-6 fw-bold text-primary" id="best-score">0</div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <button type="button" class="btn btn-success btn-sm compact-action" id="new-game-btn">
+                        <i class="bi bi-play-fill"></i>
+                        <span class="ms-1 action-label" data-i18n="newGame"></span>
+                    </button>
+                    <button type="button" class="btn btn-warning btn-sm compact-action" id="undo-btn">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <span class="ms-1 action-label" data-i18n="undo"></span>
+                        <span class="badge bg-secondary ms-1" id="undo-count">0</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm compact-action" id="export-btn">
+                        <i class="bi bi-download"></i>
+                        <span class="ms-1 action-label" data-i18n="exportGame"></span>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm compact-action" id="playback-btn">
+                        <i class="bi bi-play-circle"></i>
+                        <span class="ms-1 action-label" data-i18n="playback"></span>
+                    </button>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="language" id="lang-it" value="it" checked>
+                        <label class="btn btn-outline-primary" for="lang-it">IT</label>
+                        <input type="radio" class="btn-check" name="language" id="lang-en" value="en">
+                        <label class="btn btn-outline-primary" for="lang-en">EN</label>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="theme-toggle" title="Toggle theme">
+                        <i class="bi bi-moon"></i>
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" id="info-btn" title="Instructions" data-bs-toggle="modal" data-bs-target="#instructionsModal">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="game-main d-flex justify-content-center align-items-center">
+        <div class="game-wrapper d-flex flex-column align-items-center justify-content-center w-100">
+            <div class="game-container d-flex justify-content-center align-items-center w-100">
+                <div class="board" id="board">
+                    <!-- Grid items will be generated by JavaScript -->
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Instructions Modal -->
+    <div class="modal fade" id="instructionsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" data-i18n="instructions">Istruzioni</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="mb-0">
+                        <li data-i18n="instr1">Usa le frecce della tastiera o scorri il dito per muovere i tile</li>
+                        <li data-i18n="instr2">Combina i tile con lo stesso numero per creare numeri più grandi</li>
+                        <li data-i18n="instr3">L'obiettivo è raggiungere il tile 2048</li>
+                        <li data-i18n="instr4">Puoi annullare fino a 10 mosse precedenti</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal fade" id="gameOverModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" data-i18n="gameOver">Partita Terminata</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <div class="text-muted mb-2" data-i18n="finalScore">Punteggio finale</div>
+                        <div class="fs-1 fw-bold text-primary" id="final-score">0</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="text-muted mb-2" data-i18n="bestTile">Miglior tile</div>
+                        <div class="fs-2 fw-bold" id="best-tile">2</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Chiudi</button>
+                    <button type="button" class="btn btn-primary" id="replay-btn" data-bs-dismiss="modal" data-i18n="playAgain">Gioca Ancora</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div class="modal fade" id="victoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-success">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" data-i18n="victory">🎉 Hai Vinto! 🎉</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <div class="text-muted mb-2" data-i18n="finalScore">Punteggio finale</div>
+                        <div class="fs-1 fw-bold text-success" id="victory-score">0</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="close">Chiudi</button>
+                    <button type="button" class="btn btn-success" id="continue-btn" data-bs-dismiss="modal" data-i18n="continue">Continua</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/scripts/service-worker.js')
+                        .then((registration) => {
+                            console.log('Service Worker registered with scope:', registration.scope);
+                        })
+                        .catch((error) => {
+                            console.warn('Service Worker registration failed:', error);
+                        });
+                });
+            }
+        }
+        registerServiceWorker();
+    </script>
+</body>
+</html>
