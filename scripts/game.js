@@ -718,6 +718,9 @@ function initializeGame() {
     const page = document.documentElement.dataset.page;
     if (page === 'landing') {
         initializeTheme();
+        document.querySelectorAll('input[name="language"]').forEach(radio => {
+            radio.addEventListener('change', event => changeLanguage(event.target.value));
+        });
         document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
         return;
     }
