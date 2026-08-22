@@ -112,7 +112,11 @@ class Game2048 {
         
         this.addNewTile();
         this.addNewTile();
-        this.recordingSession.initialState = this.getCurrentSnapshot();
+        this.recordingSession.initialState = {
+            ...this.getCurrentSnapshot(),
+            move: null,
+            timestamp: this.recordingSession.startedAt
+        };
         
         this.saveGameState();
         this.render();
@@ -353,10 +357,15 @@ class Game2048 {
     // ============================================
 
     createRecordingSession() {
+        const startedAt = new Date().toISOString();
         return {
-            version: 1,
-            startedAt: new Date().toISOString(),
-            initialState: this.getCurrentSnapshot(),
+            version: 3,
+            startedAt,
+            initialState: {
+                ...this.getCurrentSnapshot(),
+                move: null,
+                timestamp: startedAt
+            },
             moves: []
         };
     }
@@ -384,7 +393,8 @@ class Game2048 {
         }
 
         this.recordingSession.moves.push({
-            direction,
+            move: direction,
+            timestamp: new Date().toISOString(),
             previousBoard: [...previousBoard],
             board: [...this.board],
             scoreBefore,
@@ -466,9 +476,11 @@ class Game2048 {
     }
 
     exportGame() {
+        const generatedAt = new Date().toISOString();
         const exportData = {
-            version: 1,
-            exportedAt: new Date().toISOString(),
+            version: 3,
+            generatedAt,
+            exportedAt: generatedAt,
             game: {
                 boardSize: this.boardSize,
                 board: [...this.board],
@@ -482,7 +494,7 @@ class Game2048 {
             recording: this.recordingSession
         };
 
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(exportData)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -673,7 +685,11 @@ class Game2048 {
                 this.history = gameData.history || [];
                 this.recordingSession = gameData.recording || this.createRecordingSession();
                 if (!this.recordingSession.initialState) {
-                    this.recordingSession.initialState = this.getCurrentSnapshot();
+                    this.recordingSession.initialState = {
+                        ...this.getCurrentSnapshot(),
+                        move: null,
+                        timestamp: this.recordingSession.startedAt || new Date().toISOString()
+                    };
                 }
             } catch (e) {
                 console.error('Error loading game state:', e);
@@ -683,8 +699,6 @@ class Game2048 {
             this.newGame();
         }
     }
-
-
 
     // ============================================
     // THEME

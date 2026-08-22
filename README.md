@@ -53,9 +53,56 @@ Open `index.html` directly in a modern browser, or serve the folder with any sta
 - Vanilla JavaScript for the generalized engine
 - Bootstrap 5.3 and Bootstrap Icons for the shared UI
 - Local storage keys: `2048_gameState`, `2048_bestScore`, `2048_language`, and `2048_theme`
-- Export format: JSON with a `.2048.json` extension containing the current game and its recorded frames
+- Export format: compact version 3 JSON with a `.2048.json` extension. It includes a `generatedAt` timestamp and a `recording.moves` array; every recorded state stores the player's `move`, an ISO `timestamp`, the board, and score information. The initial state has `move: null` and the session start timestamp.
 - Animations respect `prefers-reduced-motion`
 - Keyboard, touch, and accessible semantic controls are supported
+
+### Example Exported File
+
+Each `.2048.json` file follows this structure. The example uses shortened
+values for readability while remaining valid JSON:
+
+```json
+{
+	"version": 3,
+	"generatedAt": "2026-08-22T15:14:19.171Z",
+	"exportedAt": "2026-08-22T15:14:19.171Z",
+	"game": {
+		"boardSize": 4,
+		"board": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+		"score": 0,
+		"gameOver": false,
+		"won": false,
+		"bestScore": 0,
+		"language": "it",
+		"theme": "light"
+	},
+	"recording": {
+		"version": 3,
+		"startedAt": "2026-08-22T15:14:19.171Z",
+		"initialState": {
+			"board": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			"score": 0,
+			"gameOver": false,
+			"won": false,
+			"move": null,
+			"timestamp": "2026-08-22T15:14:19.171Z"
+		},
+		"moves": [
+			{
+				"move": "right",
+				"timestamp": "2026-08-22T15:14:25.004Z",
+				"previousBoard": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+				"board": [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+				"scoreBefore": 0,
+				"scoreAfter": 0,
+				"gameOver": false,
+				"won": false
+			}
+		]
+	}
+}
+```
 
 ## License and Third-Party Assets
 
