@@ -1,18 +1,18 @@
 # 2048 Game - HTML5 Version
 
-A responsive 2048 game built with vanilla JavaScript, Bootstrap 5.3, and a blue color palette. The project is split into three pages that share the same styles and game engine.
+A responsive 2048 game built with vanilla JavaScript, Bootstrap 5.3, and a blue color palette. The web app lives in `game/`; the Python training tools live in `train/`.
 
 ## Pages
 
-- `index.html` is the landing page. It links to the game and playback pages.
-- `game.html` is the playable game. It supports keyboard arrows, touch swipes, undo, score tracking, local persistence, language and theme preferences, and export.
-- `playback.html` displays a previously exported game. Choose a `.2048.json` file, then start its recorded move sequence.
+- `game/index.html` is the landing page. It links to the game and playback pages.
+- `game/game.html` is the playable game. It supports keyboard arrows, touch swipes, undo, score tracking, local persistence, language and theme preferences, and export.
+- `game/playback.html` displays an exported game. Choose a `.2048.json` file, then start its recorded move sequence.
 
-The board mechanics, recording format, rendering, theme handling, and persistence live in `scripts/game.js`. The engine selects its behavior from the page's `data-page` attribute, so the game logic is not duplicated between pages.
+The board mechanics, recording format, rendering, theme handling, and persistence live in `game/scripts/game.js`. The engine selects its behavior from the page's `data-page` attribute, so the game logic is not duplicated between pages.
 
 ## How to Play
 
-1. Open `index.html` and choose **Start playing**.
+1. Open `game/index.html` and choose **Start playing**.
 2. Move tiles with the arrow keys or by swiping on the board.
 3. Combine equal tiles to reach 2048. You can continue after winning.
 4. Use **Undo** to restore recent states, up to ten moves.
@@ -25,27 +25,45 @@ All game state, preferences, and the best score are stored in browser `localStor
 
 ```text
 2048-ai/
-├── images/
-│   ├── icon.svg               # App icon
-│   ├── it-flag.svg            # SVG Repo flag asset
-│   └── uk-flag.svg            # SVG Repo flag asset
-├── scripts/
-│   ├── game.js                # Shared 2048 engine and page controllers
-│   ├── service-worker.js      # Offline cache
-│   └── translations.js        # Italian and English translations
-├── styles/
-│   └── styles.css             # Shared themes, layout, tiles, and animations
-├── game.html                  # Playable game page
-├── index.html                 # Landing page
-├── playback.html              # File-based playback page
-├── manifest.json              # Installable web app metadata
+├── game/
+│   ├── images/
+│   │   ├── icon.svg           # App icon
+│   │   ├── it-flag.svg        # SVG Repo flag asset
+│   │   └── uk-flag.svg        # SVG Repo flag asset
+│   ├── scripts/
+│   │   ├── game.js            # Shared 2048 engine and page controllers
+│   │   ├── service-worker.js  # Offline cache
+│   │   └── translations.js    # Italian and English translations
+│   ├── styles/
+│   │   └── styles.css         # Shared themes, layout, tiles, and animations
+│   ├── game.html              # Playable game page
+│   ├── index.html             # Landing page
+│   ├── playback.html          # File-based playback page
+│   └── manifest.json          # Installable web app metadata
+├── train/
+│   ├── dataset.py             # Load and validate .2048.json demonstrations
+│   ├── train.py               # Train an MLP policy from recorded moves
 ├── LICENSE                    # GNU GPLv3 license
+├── requirements.txt           # Python training dependencies
 └── README.md
 ```
 
 ## Run Locally
 
-Open `index.html` directly in a modern browser, or serve the folder with any static web server. A static server is recommended for reliable service-worker behavior. No build step or backend is required.
+Open `game/index.html` directly in a modern browser, or serve the repository folder with any static web server. A static server is recommended for reliable service-worker behavior. No web build step or backend is required.
+
+## Train a First Policy
+
+The training baseline uses supervised learning with scikit-learn's `MLPClassifier`: each recorded move becomes a labeled example, with the board immediately before that move as the input. It writes a JSON model that can later be connected to an automated player.
+
+Place exported `.2048.json` files in a directory, then run:
+
+```bash
+python -m pip install -r requirements.txt
+python train/train.py path/to/recordings --output train/model.json --epochs 200
+```
+
+The loader accepts only version-3 `.2048.json` exports. Files with another export or recording version are skipped with a warning.
 
 ## Technical Details
 
@@ -109,7 +127,7 @@ values for readability while remaining valid JSON:
 The project code is licensed under the GNU General Public License, version 3
 (GPLv3). See [LICENSE](LICENSE) for the complete license text.
 
-The language selector flags in `images/it-flag.svg` and `images/uk-flag.svg`
+The language selector flags in `game/images/it-flag.svg` and `game/images/uk-flag.svg`
 were obtained from [SVG Repo](https://www.svgrepo.com/). These third-party
 assets are subject to the licenses and terms applicable to their respective
 SVG Repo source pages and are not relicensed by this project's GPLv3 notice.
