@@ -110,3 +110,14 @@ paths.length = 0;
 Game.prototype.animateMove.call(animated, [2, 0, 2, ...Array(13).fill(0)]);
 equal(paths.length, 0, 'reduced motion skips sliding');
 print(`Passed ${assertions} assertions including animation geometry`);
+equal(Object.keys(g.createRecordingSession()).sort(), ['initialState', 'moves', 'startedAt'], 'recording fields');
+let exported;
+globalThis.Blob = class { constructor(parts) { exported = JSON.parse(parts.join('')); } };
+globalThis.URL = { createObjectURL: () => 'blob:test', revokeObjectURL() {} };
+globalThis.document = {
+    createElement: () => ({ click() {} }),
+    body: { appendChild() {}, removeChild() {} }
+};
+g.exportGame();
+equal(Object.keys(exported).sort(), ['exportedAt', 'game', 'generatedAt', 'recording'], 'export fields');
+print(`Passed ${assertions} assertions including exported recording fields`);

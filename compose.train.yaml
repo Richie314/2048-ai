@@ -1,0 +1,8 @@
+services:
+  train:
+    build:
+      context: .
+      dockerfile: train/Dockerfile
+    volumes:
+      - ./dataset:/dataset:ro
+      - ./model:/model

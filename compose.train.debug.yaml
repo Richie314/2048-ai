@@ -1,0 +1,14 @@
+services:
+  train:
+    entrypoint: ["python", "-Xfrozen_modules=off", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "/app/train/train.py"]
+    command: ["/dataset", "--output", "/model/model.json", "--epochs", "200"]
+    ports:
+      - "127.0.0.1:5678:5678"
+    volumes:
+      - ./train:/app/train:ro
+    # Inspect TCP LISTEN state (0A), port 5678 (162E), without taking a debugger connection.
+    healthcheck:
+      test: ["CMD", "python", "-c", "from pathlib import Path; assert any(row.split()[1].endswith(':162E') and row.split()[3] == '0A' for row in Path('/proc/net/tcp').read_text().splitlines()[1:])"]
+      interval: 1s
+      timeout: 2s
+      retries: 30

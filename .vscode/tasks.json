@@ -6,24 +6,115 @@
       "type": "process",
       "command": "docker",
       "args": [
-        "compose", "--project-name", "2048-ai-vscode",
-        "--file", "${workspaceFolder}/compose.debug.yaml",
-        "up", "--detach", "--wait", "--wait-timeout", "30"
+        "compose",
+        "--project-name",
+        "2048-ai-vscode",
+        "--file",
+        "${workspaceFolder}/compose.debug.yaml",
+        "up",
+        "--detach",
+        "--wait",
+        "--wait-timeout",
+        "30"
       ],
       "problemMatcher": [],
-      "presentation": { "reveal": "silent", "panel": "dedicated" }
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
     },
     {
       "label": "2048: stop nginx",
       "type": "process",
       "command": "docker",
       "args": [
-        "compose", "--project-name", "2048-ai-vscode",
-        "--file", "${workspaceFolder}/compose.debug.yaml",
-        "down", "--remove-orphans"
+        "compose",
+        "--project-name",
+        "2048-ai-vscode",
+        "--file",
+        "${workspaceFolder}/compose.debug.yaml",
+        "down",
+        "--remove-orphans"
       ],
       "problemMatcher": [],
-      "presentation": { "reveal": "silent", "panel": "dedicated" }
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "2048: train model (Docker)",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose",
+        "--project-name",
+        "2048-ai-training",
+        "--file",
+        "${workspaceFolder}/compose.train.yaml",
+        "run",
+        "--build",
+        "--rm",
+        "--no-deps",
+        "-T",
+        "train"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "runOptions": {
+        "instanceLimit": 1
+      }
+    },
+    {
+      "label": "2048: start training debugger",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose",
+        "--project-name",
+        "2048-ai-training-debug",
+        "--file",
+        "${workspaceFolder}/compose.train.yaml",
+        "--file",
+        "${workspaceFolder}/compose.train.debug.yaml",
+        "up",
+        "--build",
+        "--detach",
+        "--wait",
+        "--wait-timeout",
+        "60",
+        "--force-recreate",
+        "train"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "2048: stop training debugger",
+      "type": "process",
+      "command": "docker",
+      "args": [
+        "compose",
+        "--project-name",
+        "2048-ai-training-debug",
+        "--file",
+        "${workspaceFolder}/compose.train.yaml",
+        "--file",
+        "${workspaceFolder}/compose.train.debug.yaml",
+        "down",
+        "--remove-orphans"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     }
   ]
 }

@@ -249,7 +249,6 @@ class Game2048 {
     createRecordingSession() {
         const startedAt = new Date().toISOString();
         return {
-            version: 3,
             startedAt,
             initialState: {
                 ...this.getCurrentSnapshot(),
@@ -352,8 +351,7 @@ class Game2048 {
                 if (!data.recording?.initialState || !Array.isArray(data.recording.moves)) {
                     throw new Error('Invalid recording');
                 }
-                if (data.version !== 3 || data.recording.version !== 3 ||
-                    (data.game?.boardSize ?? 4) !== 4 ||
+                if ((data.game?.boardSize ?? 4) !== 4 ||
                     !this.validBoard(data.recording.initialState.board) ||
                     !Number.isFinite(data.recording.initialState.score) ||
                     !data.recording.moves.every(frame => frame && this.validBoard(frame.board) &&
@@ -363,7 +361,11 @@ class Game2048 {
                 this.finishAnimation();
                 clearInterval(this.playbackTimer);
                 this.playbackTimer = null;
-                this.recordingSession = data.recording;
+                this.recordingSession = {
+                    startedAt: data.recording.startedAt,
+                    initialState: data.recording.initialState,
+                    moves: data.recording.moves
+                };
                 this.boardSize = data.game?.boardSize || 4;
                 this.board = [...this.recordingSession.initialState.board];
                 this.score = this.recordingSession.initialState.score;
@@ -387,7 +389,6 @@ class Game2048 {
     exportGame() {
         const generatedAt = new Date().toISOString();
         const exportData = {
-            version: 3,
             generatedAt,
             exportedAt: generatedAt,
             game: {
@@ -587,7 +588,11 @@ class Game2048 {
                 this.gameOver = gameData.gameOver || false;
                 this.won = gameData.won || false;
                 this.history = gameData.history || [];
-                this.recordingSession = gameData.recording || this.createRecordingSession();
+                this.recordingSession = gameData.recording ? {
+                    startedAt: gameData.recording.startedAt,
+                    initialState: gameData.recording.initialState,
+                    moves: gameData.recording.moves
+                } : this.createRecordingSession();
                 if (!this.recordingSession.initialState) {
                     this.recordingSession.initialState = {
                         ...this.getCurrentSnapshot(),

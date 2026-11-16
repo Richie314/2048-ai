@@ -9,6 +9,24 @@
       "command": "docker compose --project-name 2048-ai-vscode --file compose.debug.yaml logs --follow --no-color site",
       "preLaunchTask": "2048: start nginx",
       "postDebugTask": "2048: stop nginx"
+    },
+    {
+      "name": "2048: Debug training (Docker)",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "127.0.0.1",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/train",
+          "remoteRoot": "/app/train"
+        }
+      ],
+      "justMyCode": true,
+      "preLaunchTask": "2048: start training debugger",
+      "postDebugTask": "2048: stop training debugger"
     }
   ]
 }

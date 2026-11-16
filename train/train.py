@@ -1,4 +1,4 @@
-"""Train an MLP policy from v3 human 2048 recordings."""
+"""Train an MLP policy from human 2048 recordings."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 
 from sklearn.neural_network import MLPClassifier
 
-from dataset import ACTIONS, load_examples
+from dataset import load_examples
 
 
 def features(board: list[int]) -> list[float]:
@@ -38,7 +38,7 @@ def train(examples: list[tuple[list[int], str]], epochs: int, learning_rate: flo
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("recordings", type=Path, help="directory containing .2048.json files")
-    parser.add_argument("--output", type=Path, default=Path("model.json"))
+    parser.add_argument("--output", type=Path, default=Path("model/model.json"))
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--learning-rate", type=float, default=0.1)
     parser.add_argument("--seed", type=int, default=42)
@@ -48,8 +48,8 @@ def main() -> None:
     classifier = train(examples, args.epochs, args.learning_rate, args.seed)
     accuracy = classifier.score([features(board) for board, _ in examples], [action for _, action in examples])
     model = {
-        "version": 1,
-        "actions": list(ACTIONS),
+        "actions": classifier.classes_.tolist(),
+        "outputActivation": classifier.out_activation_,
         "algorithm": "sklearn.neural_network.MLPClassifier",
         "featureDescription": "tile exponent/16 and empty-cell flag for each of 16 cells, plus bias",
         "hiddenLayerSizes": [64, 32],

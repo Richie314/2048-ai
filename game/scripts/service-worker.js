@@ -1,4 +1,4 @@
-const cacheName = '2048-ai-cache-v4';
+const cacheName = '2048-ai-cache';
 const assetsToCache = [
   '.',
   'index.html',
