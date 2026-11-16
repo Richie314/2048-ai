@@ -52,6 +52,30 @@ All game state, preferences, and the best score are stored in browser `localStor
 
 Open `game/index.html` directly in a modern browser, or serve the repository folder with any static web server. A static server is recommended for reliable service-worker behavior. No web build step or backend is required.
 
+## Serve with Docker from VS Code
+
+Install Docker with Compose v2 and make sure Docker is running. The VS Code tasks
+work on Linux, macOS, and Windows with Docker running Linux containers.
+
+1. Select **2048: Docker nginx** in **Run and Debug** and press **F5**.
+2. The existing start task launches nginx and waits until healthy; the session
+   terminal follows its logs.
+3. Open `http://localhost:8080/game.html` in your preferred browser.
+4. Press **Shift+F5** to end the session and run the existing stop task, which
+   stops and removes the container.
+
+The launch configuration uses VS Code's built-in JavaScript Debug Terminal to
+hold the session open while streaming Docker logs. It launches no browser and
+requires no Node.js application or machine-specific browser paths.
+
+The container serves `game/` through a read-only bind mount, so reload the browser
+to see edits. You can also run **Tasks: Run Task → 2048: start nginx** and
+**2048: stop nginx** directly. If VS Code closes unexpectedly, run the stop task
+to clean up any remaining container.
+
+If offline caching hides an edit, enable **Bypass for network** in browser
+DevTools → Application → Service Workers while developing.
+
 ## Train a First Policy
 
 The training baseline uses supervised learning with scikit-learn's `MLPClassifier`: each recorded move becomes a labeled example, with the board immediately before that move as the input. It writes a JSON model that can later be connected to an automated player.
@@ -62,6 +86,16 @@ Place exported `.2048.json` files in a directory, then run:
 python -m pip install -r requirements.txt
 python train/train.py path/to/recordings --output train/model.json --epochs 200
 ```
+
+A policy can choose an action from the current 16-cell board alone; it does not
+need a recurrent model or the full move history. Tile spawning is random, so the
+board determines the possible next states rather than one fixed next state.
+
+New recordings capture `previousBoard` and `scoreBefore` before applying the
+move, and `board` and `scoreAfter` after merging and spawning. Undo removes the
+abandoned move from the recording and saves the restored state. Older exports
+may contain incorrect pre-move fields or discontinuities from undo; use fresh
+recordings for training.
 
 The loader accepts only version-3 `.2048.json` exports. Files with another export or recording version are skipped with a warning.
 
@@ -111,7 +145,7 @@ values for readability while remaining valid JSON:
 				"move": "right",
 				"timestamp": "2026-08-22T15:14:25.004Z",
 				"previousBoard": [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-				"board": [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+				"board": [2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 				"scoreBefore": 0,
 				"scoreAfter": 0,
 				"gameOver": false,
@@ -121,6 +155,14 @@ values for readability while remaining valid JSON:
 	}
 }
 ```
+
+## Game regression checks
+
+Run `gjs tests/game.test.js` from the repository root (requires GNOME JavaScript).
+The checks cover all 625 lines built from empty cells and tiles 2–16 in every
+direction, scoring, tile trajectories, reduced motion, recording, undo persistence,
+ten-move undo capacity, terminal states, victory continuation, and playback input.
+Browser visual checks are still useful for responsive layout and touch interaction.
 
 ## License and Third-Party Assets
 

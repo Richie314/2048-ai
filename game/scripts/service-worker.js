@@ -1,4 +1,4 @@
-const cacheName = '2048-ai-cache-v3';
+const cacheName = '2048-ai-cache-v4';
 const assetsToCache = [
   '.',
   'index.html',
@@ -25,7 +25,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key !== cacheName).map((key) => caches.delete(key))
+      keys.filter((key) => key.startsWith('2048-ai-cache-') && key !== cacheName).map((key) => caches.delete(key))
     ))
   );
 });

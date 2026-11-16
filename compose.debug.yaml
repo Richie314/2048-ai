@@ -1,0 +1,12 @@
+services:
+  site:
+    image: nginx:stable-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./game:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/game.html"]
+      interval: 1s
+      timeout: 2s
+      retries: 15

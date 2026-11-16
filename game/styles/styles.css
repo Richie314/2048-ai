@@ -258,7 +258,7 @@ html, body {
     color: var(--tile-text-light);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: relative;
-    transition: all 0.15s ease-out;
+    transition: background-color 0.15s ease-out;
 }
 
 /* Tile value colors */
@@ -276,49 +276,13 @@ html, body {
 .tile[data-value="4096"] { background-color: var(--tile-2048); color: var(--tile-text-dark); }
 .tile[data-value="8192"] { background-color: var(--tile-2048); color: var(--tile-text-dark); }
 
-/* Tile animations */
-.tile.new {
-    animation: newTile 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.tile.merge {
-    animation: mergeTile 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-}
-
-.tile.move {
-    transition: all 0.15s ease-out;
-}
-
-@keyframes newTile {
-    0% {
-        transform: scale(0);
-        opacity: 0;
-    }
-    50% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-}
-
-@keyframes mergeTile {
-    0% {
-        transform: scale(1);
-    }
-    25% {
-        transform: scale(1.15) rotateZ(2deg);
-    }
-    50% {
-        transform: scale(1.25);
-    }
-    75% {
-        transform: scale(1.1) rotateZ(-1deg);
-    }
-    100% {
-        transform: scale(1);
-    }
+/* Moving copies share the grid cells' measured size, including on mobile. */
+.tile.sliding-tile {
+    position: absolute;
+    z-index: 2;
+    min-height: 0;
+    pointer-events: none;
+    transition: none;
 }
 
 /* ============================================
@@ -570,7 +534,7 @@ header {
 }
 
 .tile {
-    min-height: 60px;
+    min-height: 0;
 }
 
 /* High contrast for dark mode text */

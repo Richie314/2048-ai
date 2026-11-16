@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "2048: Docker nginx",
+      "type": "node-terminal",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "command": "docker compose --project-name 2048-ai-vscode --file compose.debug.yaml logs --follow --no-color site",
+      "preLaunchTask": "2048: start nginx",
+      "postDebugTask": "2048: stop nginx"
+    }
+  ]
+}

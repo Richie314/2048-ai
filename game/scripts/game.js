@@ -14,7 +14,9 @@ class Game2048 {
         this.won = false;
         this.history = []; // For undo functionality
         this.maxHistory = 10;
-        this.tileAnimations = {}; // Track tile animations (position, state)
+        this.moveAnimations = [];
+        this.animationTimer = null;
+        this.keepPlaying = false;
         this.recordingSession = this.createRecordingSession();
         this.playbackTimer = null;
         this.playbackIndex = 0;
@@ -80,7 +82,8 @@ class Game2048 {
         this.exportBtn?.addEventListener('click', () => this.exportGame());
         this.playbackBtn?.addEventListener('click', () => this.playbackRecordedGame());
         this.continueBtn?.addEventListener('click', () => {
-            this.won = false;
+            this.keepPlaying = true;
+            this.saveGameState(false);
             this.render();
         });
 
@@ -103,6 +106,12 @@ class Game2048 {
     // ============================================
 
     newGame() {
+        this.finishAnimation();
+        this.gameOverModal?.hide();
+        this.victoryModal?.hide();
+        clearInterval(this.playbackTimer);
+        this.playbackTimer = null;
+        this.keepPlaying = false;
         this.board = Array(this.boardSize * this.boardSize).fill(0);
         this.score = 0;
         this.gameOver = false;
@@ -137,186 +146,66 @@ class Game2048 {
     }
 
     handleKeyPress(e) {
-        if (this.gameOver || this.won) return;
-        
-        const key = e.key;
-        let moved = false;
-        let direction = null;
-        
-        if (key === 'ArrowLeft') {
-            e.preventDefault();
-            direction = 'left';
-            moved = this.moveLeft();
-        } else if (key === 'ArrowRight') {
-            e.preventDefault();
-            direction = 'right';
-            moved = this.moveRight();
-        } else if (key === 'ArrowUp') {
-            e.preventDefault();
-            direction = 'up';
-            moved = this.moveUp();
-        } else if (key === 'ArrowDown') {
-            e.preventDefault();
-            direction = 'down';
-            moved = this.moveDown();
-        }
-        
-        if (moved) {
-            const previousBoard = [...this.board];
-            const scoreBefore = this.score;
-            this.addNewTile();
-            this.checkGameState();
-            this.recordMove(direction, previousBoard, scoreBefore);
-            this.saveGameState();
-            this.render();
-        }
+        if (e.target?.closest('input, textarea, select, [contenteditable="true"]') ||
+            document.querySelector('.modal.show')) return;
+        const direction = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' }[e.key];
+        if (!direction) return;
+        e.preventDefault();
+        this.performMove(direction);
     }
 
     handleSwipe(startX, startY, endX, endY) {
-        if (this.gameOver || this.won) return;
-        
-        const diffX = endX - startX;
-        const diffY = endY - startY;
-        const threshold = 50;
-        
-        let moved = false;
-        let direction = null;
-        
-        if (Math.abs(diffX) > Math.abs(diffY)) {
-            if (diffX > threshold) {
-                direction = 'right';
-                moved = this.moveRight();
-            } else if (diffX < -threshold) {
-                direction = 'left';
-                moved = this.moveLeft();
-            }
-        } else {
-            if (diffY > threshold) {
-                direction = 'down';
-                moved = this.moveDown();
-            } else if (diffY < -threshold) {
-                direction = 'up';
-                moved = this.moveUp();
-            }
-        }
-        
-        if (moved) {
-            const previousBoard = [...this.board];
-            const scoreBefore = this.score;
-            this.addNewTile();
-            this.checkGameState();
-            this.recordMove(direction, previousBoard, scoreBefore);
-            this.saveGameState();
-            this.render();
-        }
+        const dx = endX - startX, dy = endY - startY;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 30) return;
+        this.performMove(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
     }
 
-    moveLeft() {
-        const oldBoard = JSON.parse(JSON.stringify(this.board));
-        
-        for (let row = 0; row < this.boardSize; row++) {
-            const lineStartIdx = row * this.boardSize;
-            const line = this.board.slice(lineStartIdx, lineStartIdx + this.boardSize);
-            
-            const moved = this.moveLine(line);
-            
-            for (let i = 0; i < this.boardSize; i++) {
-                this.board[lineStartIdx + i] = line[i];
-            }
-        }
-        
-        return this.isBoardChanged(oldBoard);
+    performMove(direction) {
+        if (this.mode !== 'game' || this.playbackTimer || this.gameOver || (this.won && !this.keepPlaying)) return false;
+        this.finishAnimation();
+        const previousBoard = [...this.board];
+        const scoreBefore = this.score;
+        if (!this.move(direction)) return false;
+        this.addNewTile();
+        this.checkGameState();
+        this.recordMove(direction, previousBoard, scoreBefore);
+        this.saveGameState();
+        this.updateScore();
+        this.animateMove(previousBoard);
+        return true;
     }
 
-    moveRight() {
-        const oldBoard = JSON.parse(JSON.stringify(this.board));
-        
-        for (let row = 0; row < this.boardSize; row++) {
-            const lineStartIdx = row * this.boardSize;
-            const line = this.board.slice(lineStartIdx, lineStartIdx + this.boardSize).reverse();
-            
-            this.moveLine(line);
-            
-            for (let i = 0; i < this.boardSize; i++) {
-                this.board[lineStartIdx + i] = line[this.boardSize - 1 - i];
+    // A deterministic move: spawning and recording belong to performMove.
+    move(direction) {
+        if (!['left', 'right', 'up', 'down'].includes(direction)) return false;
+        const before = [...this.board];
+        this.moveAnimations = [];
+        for (let line = 0; line < this.boardSize; line++) {
+            const indices = Array.from({ length: this.boardSize }, (_, offset) => {
+                const position = direction === 'right' || direction === 'down' ? this.boardSize - 1 - offset : offset;
+                return direction === 'left' || direction === 'right' ? line * this.boardSize + position : position * this.boardSize + line;
+            });
+            const tiles = indices.filter(index => before[index] !== 0);
+            indices.forEach(index => { this.board[index] = 0; });
+            let destination = 0;
+            for (let i = 0; i < tiles.length; i++) {
+                const from = tiles[i], to = indices[destination++];
+                const merged = i + 1 < tiles.length && before[from] === before[tiles[i + 1]];
+                this.board[to] = before[from] * (merged ? 2 : 1);
+                this.moveAnimations.push({ from, to });
+                if (merged) {
+                    this.score += this.board[to];
+                    this.moveAnimations.push({ from: tiles[++i], to });
+                }
             }
         }
-        
-        return this.isBoardChanged(oldBoard);
+        return before.some((value, index) => value !== this.board[index]);
     }
 
-    moveUp() {
-        const oldBoard = JSON.parse(JSON.stringify(this.board));
-        
-        for (let col = 0; col < this.boardSize; col++) {
-            const line = [];
-            for (let row = 0; row < this.boardSize; row++) {
-                line.push(this.board[row * this.boardSize + col]);
-            }
-            
-            this.moveLine(line);
-            
-            for (let row = 0; row < this.boardSize; row++) {
-                this.board[row * this.boardSize + col] = line[row];
-            }
-        }
-        
-        return this.isBoardChanged(oldBoard);
-    }
-
-    moveDown() {
-        const oldBoard = JSON.parse(JSON.stringify(this.board));
-        
-        for (let col = 0; col < this.boardSize; col++) {
-            const line = [];
-            for (let row = 0; row < this.boardSize; row++) {
-                line.push(this.board[row * this.boardSize + col]);
-            }
-            
-            line.reverse();
-            this.moveLine(line);
-            line.reverse();
-            
-            for (let row = 0; row < this.boardSize; row++) {
-                this.board[row * this.boardSize + col] = line[row];
-            }
-        }
-        
-        return this.isBoardChanged(oldBoard);
-    }
-
-    moveLine(line) {
-        // Remove zeros
-        const nonZero = line.filter(val => val !== 0);
-        
-        // Merge adjacent equal values
-        for (let i = 0; i < nonZero.length - 1; i++) {
-            if (nonZero[i] === nonZero[i + 1]) {
-                nonZero[i] *= 2;
-                this.score += nonZero[i];
-                nonZero.splice(i + 1, 1);
-            }
-        }
-        
-        // Add zeros at the end
-        while (nonZero.length < this.boardSize) {
-            nonZero.push(0);
-        }
-        
-        // Copy back to line
-        for (let i = 0; i < this.boardSize; i++) {
-            line[i] = nonZero[i];
-        }
-    }
-
-    isBoardChanged(oldBoard) {
-        for (let i = 0; i < oldBoard.length; i++) {
-            if (oldBoard[i] !== this.board[i]) {
-                return true;
-            }
-        }
-        return false;
-    }
+    moveLeft() { return this.move('left'); }
+    moveRight() { return this.move('right'); }
+    moveUp() { return this.move('up'); }
+    moveDown() { return this.move('down'); }
 
     checkGameState() {
         // Check for 2048
@@ -324,6 +213,7 @@ class Game2048 {
             this.won = true;
         }
 
+        this.gameOver = false;
         // Check if any moves are possible
         if (!this.board.some(val => val === 0)) {
             // Check for possible merges
@@ -405,6 +295,7 @@ class Game2048 {
     }
 
     playbackRecordedGame() {
+        this.finishAnimation();
         if (!this.recordingSession || !this.recordingSession.initialState) {
             return;
         }
@@ -434,14 +325,21 @@ class Game2048 {
             }
 
             const frame = this.recordingSession.moves[this.playbackIndex];
+            const previousBoard = [...this.board];
+            this.move(frame.move);
             this.board = [...frame.board];
             this.score = frame.scoreAfter;
             this.gameOver = frame.gameOver;
             this.won = frame.won;
             this.playbackIndex += 1;
             this.updateScore();
-            this.renderBoard();
+            this.animateMove(previousBoard);
         }, 700);
+    }
+
+    validBoard(board) {
+        return Array.isArray(board) && board.length === 16 && board.every(value =>
+            Number.isSafeInteger(value) && (value === 0 || (value >= 2 && Number.isInteger(Math.log2(value)))));
     }
 
     loadPlaybackFile(file) {
@@ -454,6 +352,17 @@ class Game2048 {
                 if (!data.recording?.initialState || !Array.isArray(data.recording.moves)) {
                     throw new Error('Invalid recording');
                 }
+                if (data.version !== 3 || data.recording.version !== 3 ||
+                    (data.game?.boardSize ?? 4) !== 4 ||
+                    !this.validBoard(data.recording.initialState.board) ||
+                    !Number.isFinite(data.recording.initialState.score) ||
+                    !data.recording.moves.every(frame => frame && this.validBoard(frame.board) &&
+                        ['left', 'right', 'up', 'down'].includes(frame.move) && Number.isFinite(frame.scoreAfter))) {
+                    throw new Error('Invalid recording frames');
+                }
+                this.finishAnimation();
+                clearInterval(this.playbackTimer);
+                this.playbackTimer = null;
                 this.recordingSession = data.recording;
                 this.boardSize = data.game?.boardSize || 4;
                 this.board = [...this.recordingSession.initialState.board];
@@ -505,41 +414,22 @@ class Game2048 {
         URL.revokeObjectURL(url);
     }
 
-    saveGameState() {
-        // Keep history limited to maxHistory moves
-        if (this.history.length >= this.maxHistory) {
-            this.history.shift();
-        }
-        
-        this.history.push({
-            board: JSON.parse(JSON.stringify(this.board)),
-            score: this.score
-        });
-        
-        const gameData = {
-            board: this.board,
-            score: this.score,
-            gameOver: this.gameOver,
-            won: this.won,
-            history: this.history,
-            recording: this.recordingSession
-        };
-        
-        localStorage.setItem('2048_gameState', JSON.stringify(gameData));
-        this.updateUndoUI();
-    }
-
     undo() {
         if (this.history.length <= 1) return;
         
+        this.finishAnimation();
+        this.gameOverModal?.hide();
+        this.victoryModal?.hide();
         this.history.pop(); // Remove current state
         const previousState = this.history[this.history.length - 1];
         
         this.board = JSON.parse(JSON.stringify(previousState.board));
         this.score = previousState.score;
-        this.gameOver = false;
-        this.won = false;
-        
+        this.gameOver = previousState.gameOver || false;
+        this.won = previousState.won || false;
+        this.keepPlaying = previousState.keepPlaying || false;
+        this.recordingSession.moves.pop();
+        this.saveGameState(false);
         this.updateUndoUI();
         this.render();
     }
@@ -557,11 +447,13 @@ class Game2048 {
     render() {
         this.updateScore();
         this.renderBoard();
+        if (this.mode !== 'game') return;
+        this.updateUndoUI();
         this.checkGameState();
         
         if (this.gameOver) {
             this.showGameOver();
-        } else if (this.won) {
+        } else if (this.won && !this.keepPlaying) {
             this.showVictory();
         }
     }
@@ -578,7 +470,7 @@ class Game2048 {
         }, 10);
         
         const bestScore = parseInt(localStorage.getItem('2048_bestScore') || '0', 10);
-        if (this.score > bestScore) {
+        if (this.mode === 'game' && this.score > bestScore) {
             localStorage.setItem('2048_bestScore', this.score);
         }
         
@@ -587,46 +479,60 @@ class Game2048 {
         }
     }
 
-    renderBoard() {
-        this.boardElement.innerHTML = '';
-        
-        // Track previous board state for animations
-        const prevAnimations = { ...this.tileAnimations };
-        this.tileAnimations = {};
-        
-        for (let i = 0; i < this.board.length; i++) {
-            const tile = document.createElement('div');
-            tile.className = 'tile';
-            tile.id = `tile-${i}`;
-            
-            const value = this.board[i];
-            
-            if (value !== 0) {
-                tile.setAttribute('data-value', value);
-                tile.textContent = value;
-                
-                // Track tile animations
-                const wasEmpty = !prevAnimations[i] || prevAnimations[i].value === 0;
-                const wasMerged = prevAnimations[i]?.merged;
-                const valueChanged = prevAnimations[i]?.value !== value;
-                
-                if (wasEmpty) {
-                    // New tile spawned
-                    tile.classList.add('new');
-                    this.tileAnimations[i] = { value, merged: false };
-                } else if (valueChanged && !wasMerged) {
-                    // Tile merged (value increased)
-                    tile.classList.add('merge');
-                    this.tileAnimations[i] = { value, merged: true };
-                } else {
-                    // Tile moved or stayed
-                    tile.classList.add('move');
-                    this.tileAnimations[i] = { value, merged: false };
-                }
-            }
-            
-            this.boardElement.appendChild(tile);
+    finishAnimation() {
+        if (this.animationTimer === null) return;
+        clearTimeout(this.animationTimer);
+        this.animationTimer = null;
+        this.render();
+    }
+
+    animateMove(previousBoard) {
+        this.renderBoard(previousBoard);
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !this.boardElement.animate) {
+            this.render();
+            return;
         }
+        const cells = [...this.boardElement.children];
+        const origin = this.boardElement.getBoundingClientRect();
+        for (const { from, to } of this.moveAnimations) {
+            const source = cells[from].getBoundingClientRect();
+            const target = cells[to].getBoundingClientRect();
+            const tile = this.createTile(previousBoard[from]);
+            tile.classList.add('sliding-tile');
+            Object.assign(tile.style, {
+                left: `${source.left - origin.left}px`, top: `${source.top - origin.top}px`,
+                width: `${source.width}px`, height: `${source.height}px`
+            });
+            this.boardElement.appendChild(tile);
+            cells[from].textContent = '';
+            cells[from].removeAttribute('data-value');
+            tile.animate([
+                { transform: 'translate(0, 0)' },
+                { transform: `translate(${target.left - source.left}px, ${target.top - source.top}px)` }
+            ], { duration: 140, easing: 'ease-out', fill: 'forwards' });
+        }
+        this.animationTimer = setTimeout(() => {
+            this.animationTimer = null;
+            this.render();
+        }, 150);
+    }
+
+    createTile(value) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        if (value) {
+            tile.dataset.value = value;
+            tile.textContent = value;
+        }
+        return tile;
+    }
+
+    renderBoard(board = this.board) {
+        this.boardElement.replaceChildren(...board.map((value, index) => {
+            const tile = this.createTile(value);
+            tile.id = `tile-${index}`;
+            return tile;
+        }));
     }
 
     showGameOver() {
@@ -647,23 +553,19 @@ class Game2048 {
     // STORAGE
     // ============================================
 
-    saveGameState() {
-        // Keep history limited to maxHistory moves
-        if (this.history.length >= this.maxHistory) {
-            this.history.shift();
+    saveGameState(addHistory = true) {
+        if (addHistory) {
+            this.history.push({ ...this.getCurrentSnapshot(), keepPlaying: this.keepPlaying });
+            if (this.history.length > this.maxHistory + 1) this.history.shift();
         }
-        
-        this.history.push({
-            board: JSON.parse(JSON.stringify(this.board)),
-            score: this.score
-        });
-        
+
         // Save to localStorage
         const gameData = {
             board: this.board,
             score: this.score,
             gameOver: this.gameOver,
             won: this.won,
+            keepPlaying: this.keepPlaying,
             history: this.history,
             recording: this.recordingSession
         };
@@ -678,7 +580,9 @@ class Game2048 {
         if (savedData) {
             try {
                 const gameData = JSON.parse(savedData);
-                this.board = gameData.board || Array(16).fill(0);
+                if (!this.validBoard(gameData.board)) throw new Error("Invalid saved board");
+                this.board = gameData.board;
+                this.keepPlaying = gameData.keepPlaying || false;
                 this.score = gameData.score || 0;
                 this.gameOver = gameData.gameOver || false;
                 this.won = gameData.won || false;
