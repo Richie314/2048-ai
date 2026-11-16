@@ -102,10 +102,10 @@ function changeLanguage(lang) {
 }
 
 /**
- * Initialize language from localStorage or use default (Italian)
+ * Initialize language from localStorage or use default (English)
  */
 function initializeLanguage() {
-    const savedLang = localStorage.getItem('2048_language') || 'it';
+    const savedLang = localStorage.getItem('2048_language') || 'en';
     document.documentElement.lang = savedLang;
     
     const langRadio = document.querySelector(`input[name="language"][value="${savedLang}"]`);

@@ -398,7 +398,7 @@ class Game2048 {
                 gameOver: this.gameOver,
                 won: this.won,
                 bestScore: parseInt(localStorage.getItem('2048_bestScore') || '0', 10),
-                language: localStorage.getItem('2048_language') || 'it',
+                language: localStorage.getItem('2048_language') || 'en',
                 theme: localStorage.getItem('2048_theme') || 'light'
             },
             recording: this.recordingSession
